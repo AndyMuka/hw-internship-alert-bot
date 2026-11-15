@@ -111,6 +111,23 @@ def test_location_rejected(matcher):
     assert matcher.match(job("FPGA Intern", location="Berlin, Germany")) == []
 
 
+def test_real_config_allows_montreal():
+    m = scraper.Matcher(scraper.load_config())
+    assert m.match(job("FPGA Intern", location="Montréal, QC"))
+
+
+def test_parse_ashby_locations_and_unlisted():
+    posts = [
+        {"title": "FPGA Intern", "jobUrl": "https://a.test/1", "location": "San Jose",
+         "secondaryLocations": [{"location": "Toronto"}], "isRemote": True,
+         "department": "ASIC", "team": "DV", "publishedAt": "2026-11-01T00:00:00Z"},
+        {"title": "Hidden", "jobUrl": "https://a.test/2", "isListed": False},
+    ]
+    (j,) = scraper.parse_ashby("x", "X Co", posts)
+    assert j["location"] == "San Jose; Toronto; Remote"
+    assert j["department"] == "ASIC / DV" and j["posted"] == "2026-11-01"
+
+
 def test_unknown_location_rejected_by_default(matcher):
     assert matcher.match(job("FPGA Intern", location="")) == []
 

@@ -313,6 +313,40 @@ def fetch_lever(slug: str, name: str) -> list[Job] | None:
     return out
 
 
+def parse_ashby(slug: str, name: str, postings: list[dict[str, Any]]) -> list[Job]:
+    """Convert Ashby posting-api entries into jobs (unlisted postings skipped)."""
+    out: list[Job] = []
+    for p in postings:
+        url = p.get("jobUrl") or ""
+        title = p.get("title") or ""
+        if not url or not title or p.get("isListed") is False:
+            continue
+        locs = [p.get("location") or ""]
+        locs += [s.get("location", "") if isinstance(s, dict) else str(s)
+                 for s in p.get("secondaryLocations") or []]
+        if p.get("isRemote"):
+            locs.append("Remote")
+        department = " / ".join(x for x in (p.get("department"), p.get("team")) if x)
+        out.append(make_job(f"ashby:{slug}", name, title, "; ".join(x for x in locs if x),
+                            url, department, parse_posted(p.get("publishedAt"))))
+    return out
+
+
+def fetch_ashby(slug: str, name: str) -> list[Job] | None:
+    """Fetch all jobs from a public Ashby board; None on failure."""
+    try:
+        resp = http_get(f"https://api.ashbyhq.com/posting-api/job-board/{slug}")
+        if resp.status_code == 404:
+            log.warning("[ashby:%s] 404 - no public board with this slug. "
+                        "Check the slug or remove it from config.json.", slug)
+            return None
+        postings = resp.json().get("jobs", [])
+    except (requests.RequestException, ValueError, AttributeError) as e:
+        log.warning("[ashby:%s] fetch failed: %s", slug, e)
+        return None
+    return parse_ashby(slug, name, postings)
+
+
 # ---- GitHub README tables (HTML tables and Markdown pipe tables) ----------
 
 _TAG_RE = re.compile(r"<[^>]+>")
@@ -611,7 +645,8 @@ def send_job_alert(notifier: Notifier, job: Job, categories: list[Category]) -> 
 def collect_sources(cfg: dict[str, Any]) -> Iterator[tuple[str, Callable[[], list[Job] | None]]]:
     """Yield ``(source_key, fetch_function)`` for everything enabled in config."""
     companies = cfg.get("companies", {})
-    for board, fetcher in (("greenhouse", fetch_greenhouse), ("lever", fetch_lever)):
+    for board, fetcher in (("greenhouse", fetch_greenhouse), ("lever", fetch_lever),
+                           ("ashby", fetch_ashby)):
         entries = companies.get(board, {})
         if isinstance(entries, list):  # also accept a plain list of slugs
             entries = {slug: slug for slug in entries}

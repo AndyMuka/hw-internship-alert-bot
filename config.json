@@ -67,6 +67,7 @@
     "toronto", "markham", "mississauga", "north york", "scarborough",
     "vaughan", "richmond hill", "brampton", "oakville", "waterloo",
     "ontario", ", on", "canada", "remote",
+    "montreal", "montréal", "quebec", "québec", ", qc",
 
     "bay area", "silicon valley", "san francisco", "san jose", "santa clara",
     "sunnyvale", "mountain view", "palo alto", "cupertino", "menlo park",
@@ -114,13 +115,24 @@
       "janestreet": "Jane Street",
       "wehrtyou": "Hudson River Trading",
       "imc": "IMC Trading",
-      "optiverus": "Optiver"
+      "optiverus": "Optiver",
+      "agilityrobotics": "Agility Robotics",
+      "vardaspace": "Varda Space",
+      "muonspace": "Muon Space"
     },
     "lever": {
       "zoox": "Zoox",
       "waabi": "Waabi",
       "kepler": "Kepler Communications",
       "palantir": "Palantir"
+    },
+    "ashby": {
+      "etched": "Etched",
+      "d-matrix": "d-Matrix",
+      "cerebras": "Cerebras",
+      "1x": "1X Technologies",
+      "skydio": "Skydio",
+      "saronic": "Saronic"
     }
   },
 
