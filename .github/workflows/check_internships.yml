@@ -1,0 +1,75 @@
+name: Check Internships
+
+# Designed for a PUBLIC repository: GitHub Actions is free and unmetered there,
+# so a 15-minute schedule can never use up paid minutes.
+# Your ntfy topic lives in the encrypted secret NTFY_TOPIC, never in the repo.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # commit seen_jobs.json
+  actions: write    # keep the schedule from being auto-disabled
+
+concurrency:
+  group: internship-alert-bot
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check repository visibility
+        run: |
+          visibility="$(gh api "repos/${GITHUB_REPOSITORY}" --jq .visibility 2>/dev/null || echo unknown)"
+          echo "REPO_VISIBILITY=${visibility}" >> "$GITHUB_ENV"
+          echo "Repository visibility: ${visibility}"
+          if [ "${visibility}" != "public" ]; then
+            echo "::warning::This repository is not public, so every run uses your monthly Actions minutes. Make it public (Settings > General > Danger Zone) to run free without limits. See README Part 2."
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run scraper
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python scraper.py
+
+      - name: Commit updated seen_jobs.json
+        run: |
+          if [ ! -f seen_jobs.json ]; then
+            echo "No seen_jobs.json yet (dry run); nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add seen_jobs.json
+          if git diff --cached --quiet; then
+            echo "No changes to seen_jobs.json."
+          else
+            git commit -m "Update seen_jobs.json [skip ci]"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Keep the schedule alive
+        # GitHub pauses scheduled workflows in public repos after 60 days
+        # without repository activity. Re-enabling resets that timer.
+        if: always()
+        continue-on-error: true
+        run: gh api -X PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/check_internships.yml/enable" --silent

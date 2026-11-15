@@ -1,0 +1,142 @@
+{
+  "notifications": {
+    "ntfy_server": "https://ntfy.sh",
+    "ntfy_topic_name": "CHANGE_ME_TO_SECRET_TOPIC",
+    "discord_webhook_url": "",
+    "max_individual_alerts_per_run": 15
+  },
+
+  "level_keywords": [
+    "intern", "internship", "co-op", "coop", "student",
+    "summer 2027", "fall 2027", "winter 2027"
+  ],
+
+  "role_categories": {
+    "hardware_acceleration": {
+      "enabled": true,
+      "label": "Hardware Acceleration",
+      "priority": 5,
+      "emoji_tag": "zap",
+      "keywords": [
+        "fpga", "asic", "rtl", "verilog", "systemverilog", "vhdl",
+        "hardware acceleration", "accelerator", "silicon", "vlsi",
+        "computer architecture", "soc", "design verification", "dv"
+      ]
+    },
+    "gpu_and_compilers": {
+      "enabled": true,
+      "label": "GPU & Compilers",
+      "priority": 4,
+      "emoji_tag": "rocket",
+      "keywords": [
+        "cuda", "gpu", "kernel", "compiler", "llvm", "mlir", "triton",
+        "opencl", "ai hardware", "ml systems", "inference", "tensor"
+      ]
+    },
+    "embedded_and_firmware": {
+      "enabled": true,
+      "label": "Embedded & Firmware",
+      "priority": 4,
+      "emoji_tag": "electric_plug",
+      "keywords": [
+        "embedded", "firmware", "rtos", "microcontroller", "bare metal",
+        "device driver", "board bring-up", "bsp", "stm32", "arm"
+      ]
+    },
+    "ee_sw_hybrid": {
+      "enabled": true,
+      "label": "EE/SW Hybrid",
+      "priority": 3,
+      "emoji_tag": "satellite",
+      "keywords": [
+        "electrical", "hardware engineer", "systems engineer", "robotics",
+        "avionics", "signal processing", "dsp", "pcie", "high speed"
+      ]
+    }
+  },
+
+  "exclude_keywords": [
+    "senior", "staff", "principal", "manager", "director",
+    "phd only", "new grad", "full-time"
+  ],
+
+  "allowed_locations": [
+    "ottawa", "kanata", "nepean",
+    "toronto", "markham", "mississauga", "north york", "scarborough",
+    "vaughan", "richmond hill", "brampton", "oakville", "waterloo",
+    "ontario", ", on", "canada", "remote",
+
+    "bay area", "silicon valley", "san francisco", "san jose", "santa clara",
+    "sunnyvale", "mountain view", "palo alto", "cupertino", "menlo park",
+    "fremont", "milpitas",
+    "seattle", "bellevue",
+    "new york", "nyc", "brooklyn", "manhattan",
+    "austin",
+    "boston", "cambridge",
+    "los angeles", "irvine", "san diego",
+    "chicago",
+    ", ca", ", wa", ", ny", ", tx", ", ma", ", il"
+  ],
+
+  "matching": {
+    "match_whole_words": true,
+    "allow_unknown_location": false,
+    "dedupe_across_sources": true
+  },
+
+  "companies": {
+    "greenhouse": {
+      "tenstorrent": "Tenstorrent",
+      "sambanovasystems": "SambaNova",
+      "lightmatter": "Lightmatter",
+      "asteralabs": "Astera Labs",
+      "psiquantum": "PsiQuantum",
+      "neuralink": "Neuralink",
+      "andurilindustries": "Anduril",
+      "spacex": "SpaceX",
+      "rocketlab": "Rocket Lab",
+      "astranis": "Astranis",
+      "flyzipline": "Zipline",
+      "figureai": "Figure AI",
+      "apptronik": "Apptronik",
+      "waymo": "Waymo",
+      "nuro": "Nuro",
+      "motional": "Motional",
+      "lucidmotors": "Lucid Motors",
+      "samsara": "Samsara",
+      "verkada": "Verkada",
+      "geotab": "Geotab",
+      "databricks": "Databricks",
+      "anthropic": "Anthropic",
+      "hyannisportresearch": "HPR (Hyannis Port Research)",
+      "janestreet": "Jane Street",
+      "wehrtyou": "Hudson River Trading",
+      "imc": "IMC Trading",
+      "optiverus": "Optiver"
+    },
+    "lever": {
+      "zoox": "Zoox",
+      "waabi": "Waabi",
+      "kepler": "Kepler Communications",
+      "palantir": "Palantir"
+    }
+  },
+
+  "github_feeds": [
+    {
+      "name": "SimplifyJobs Summer 2027",
+      "enabled": true,
+      "url": "https://raw.githubusercontent.com/SimplifyJobs/Summer2027-Internships/dev/README.md"
+    },
+    {
+      "name": "SimplifyJobs Off-Season 2027 (Fall/Winter/Spring co-ops)",
+      "enabled": true,
+      "url": "https://raw.githubusercontent.com/SimplifyJobs/Summer2027-Internships/dev/README-Off-Season.md"
+    },
+    {
+      "name": "vanshb03 Summer 2027",
+      "enabled": true,
+      "url": "https://raw.githubusercontent.com/vanshb03/Summer2027-Internships/dev/README.md"
+    }
+  ]
+}
