@@ -210,3 +210,11 @@ def test_ntfy_headers_include_matches_button(monkeypatch):
     assert "All matches, https://list.test/m" in sent["h"]["Actions"]
     n.send("digest", "m")  # no job url: tap opens the list
     assert sent["h"]["Click"] == "https://list.test/m"
+
+def test_matches_html_written_and_escaped(tmp_path):
+    jobs = [scraper.make_job("s", "A<b>", "FPGA <script>x</script> Intern", "Ottawa",
+                             'https://a.test/1?x="y"', posted="2026-11-14")]
+    scraper.write_matches_page(jobs, str(tmp_path / "m.md"))
+    page = (tmp_path / "m.html").read_text(encoding="utf-8")
+    assert "<script>x</script>" not in page and "&lt;script&gt;" in page
+    assert "1 matching internships" in page

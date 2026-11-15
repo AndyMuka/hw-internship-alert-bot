@@ -662,6 +662,33 @@ def write_matches_page(matches: list[Job], path: str = MATCHES_PATH) -> None:
                      f"[{title}]({j['url'].replace(' ', '%20')}) · {j['location'][:80] or 'n/a'}")
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines) + "\n")
+    write_matches_html(rows, os.path.splitext(path)[0] + ".html")
+
+
+def write_matches_html(rows: list[Job], path: str) -> None:
+    """Write a self-contained, filterable HTML view of ``rows`` (already sorted)."""
+    items = "\n".join(
+        f'<li><span class="d">{html.escape(j.get("posted") or "n/a")}</span> '
+        f'<b>{html.escape(j["company"])}</b> '
+        f'<a href="{html.escape(j["url"], quote=True)}" target="_blank" rel="noopener">'
+        f'{html.escape(j["title"])}</a> '
+        f'<small>{html.escape(j["location"][:80])}</small></li>'
+        for j in rows)
+    page = (
+        '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">'
+        f'<title>{len(rows)} matching internships</title>'
+        '<style>:root{color-scheme:light dark}body{font:15px system-ui;max-width:960px;'
+        'margin:1.5em auto;padding:0 1em}input{width:100%;padding:10px;font-size:16px;'
+        'box-sizing:border-box}li{margin:8px 0}.d{font-family:monospace;opacity:.7}'
+        'small{opacity:.7}</style>'
+        f'<h1>{len(rows)} matching internships</h1>'
+        f'<p>Newest first. Updated {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC.</p>'
+        '<input id="q" placeholder="Filter: fpga, toronto, nvidia..." autofocus>'
+        f'<ol id="l" reversed style="list-style:none;padding:0">\n{items}\n</ol>'
+        '<script>q.oninput=()=>{const s=q.value.toLowerCase();document.querySelectorAll("#l li")'
+        '.forEach(e=>e.hidden=!e.textContent.toLowerCase().includes(s))}</script>')
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(page)
 
 
 def main() -> None:
