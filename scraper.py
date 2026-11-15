@@ -466,7 +466,7 @@ class Notifier:
                 "(Settings > Secrets and variables > Actions)."
             )
         # The NTFY_TOPIC secret wins; config.json is the fallback for private/local use.
-        topic = (os.environ.get("NTFY_TOPIC") or cfg_topic).strip().strip("/")
+        topic = (os.environ.get("NTFY_TOPIC") or cfg_topic).lstrip("﻿").strip().strip("/")
         self.ntfy_ready = bool(server and topic)
         # Endpoint = server + "/" + topic
         self.ntfy_url = f"{server}/{topic}" if self.ntfy_ready else ""

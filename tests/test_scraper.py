@@ -163,3 +163,8 @@ def test_markdown_table_parsing():
     jobs = scraper.parse_markdown_tables("feed:x", md)
     assert [(j["company"], j["title"]) for j in jobs] == [("Acme", "FPGA Intern"),
                                                           ("Acme", "Firmware Intern")]
+
+
+def test_topic_with_bom_and_newline_is_cleaned(monkeypatch):
+    monkeypatch.setenv("NTFY_TOPIC", "\ufeffmy-topic-123\r\n")
+    assert scraper.Notifier({}).ntfy_url == "https://ntfy.sh/my-topic-123"
