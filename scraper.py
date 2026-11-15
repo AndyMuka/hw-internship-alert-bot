@@ -19,7 +19,7 @@ import os
 import re
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Callable, Iterator
 
 import requests
@@ -27,6 +27,7 @@ import requests
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 SEEN_PATH = os.path.join(BASE_DIR, "seen_jobs.json")
+MATCHES_PATH = os.path.join(BASE_DIR, "MATCHES.md")
 
 PLACEHOLDER_TOPIC = "CHANGE_ME_TO_SECRET_TOPIC"
 HTTP_TIMEOUT = 45
@@ -204,8 +205,31 @@ def http_get(url: str, **kwargs: Any) -> requests.Response:
     raise last_error
 
 
+def parse_posted(value: str | int | None, today: date | None = None) -> str:
+    """Best-effort conversion to an ISO ``YYYY-MM-DD`` date; ``""`` if unknown.
+
+    Accepts ISO timestamps, epoch milliseconds, ages such as ``5d``/``2w``/``1mo``
+    and ``Nov 14`` style dates.
+    """
+    today = today or datetime.now(timezone.utc).date()
+    if isinstance(value, int):
+        return datetime.fromtimestamp(value / 1000, timezone.utc).date().isoformat()
+    text = clean_cell(str(value or "")).lower()
+    if re.match(r"\d{4}-\d{2}-\d{2}", text):
+        return text[:10]
+    m = re.fullmatch(r"(\d+)\s*(h|d|w|mo)", text)
+    if m:
+        days = int(m[1]) * {"h": 0, "d": 1, "w": 7, "mo": 30}[m[2]]
+        return (today - timedelta(days=days)).isoformat()
+    try:
+        d = datetime.strptime(f"{text.title()} {today.year}", "%b %d %Y").date()
+    except ValueError:
+        return ""
+    return (d if d <= today else d.replace(year=today.year - 1)).isoformat()
+
+
 def make_job(source: str, company: str, title: str, location: str, url: str,
-             department: str = "") -> Job:
+             department: str = "", posted: str = "") -> Job:
     """Build a normalized job dict with all fields stripped strings."""
     return {
         "source": source,
@@ -214,6 +238,7 @@ def make_job(source: str, company: str, title: str, location: str, url: str,
         "location": (location or "").strip(),
         "url": (url or "").strip(),
         "department": (department or "").strip(),
+        "posted": posted or "",
     }
 
 
@@ -249,8 +274,9 @@ def fetch_greenhouse(slug: str, name: str) -> list[Job] | None:
         if not url or not title:
             continue
         location = (j.get("location") or {}).get("name", "")
+        posted = parse_posted(j.get("first_published") or j.get("updated_at"))
         out.append(make_job(f"greenhouse:{slug}", name, title, location, url,
-                            departments.get(j.get("id"), "")))
+                            departments.get(j.get("id"), ""), posted))
     return out
 
 
@@ -282,7 +308,8 @@ def fetch_lever(slug: str, name: str) -> list[Job] | None:
         if (p.get("workplaceType") or "").lower() == "remote":
             locs.append("Remote")
         department = " / ".join(x for x in (cats.get("department"), cats.get("team")) if x)
-        out.append(make_job(f"lever:{slug}", name, title, "; ".join(locs), url, department))
+        out.append(make_job(f"lever:{slug}", name, title, "; ".join(locs), url, department,
+                            parse_posted(p.get("createdAt"))))
     return out
 
 
@@ -333,6 +360,8 @@ def column_map(headers: list[str]) -> dict[str, int] | None:
             cols.setdefault("location", i)
         elif "application" in h or "link" in h or "apply" in h:
             cols.setdefault("link", i)
+        elif h.strip() == "age" or "date" in h:
+            cols.setdefault("posted", i)
     if {"company", "role", "link"} <= set(cols):
         return cols
     return None
@@ -354,8 +383,9 @@ def rows_to_jobs(source: str, rows: list[list[str]], cols: dict[str, int]) -> li
         title = clean_cell(cells[cols["role"]])
         url = extract_url(cells[cols["link"]])  # closed roles have no link
         location = clean_cell(cells[cols["location"]]) if "location" in cols else ""
+        posted = parse_posted(cells[cols["posted"]]) if "posted" in cols else ""
         if company and title and url:
-            jobs.append(make_job(source, company, title, location, url))
+            jobs.append(make_job(source, company, title, location, url, posted=posted))
     return jobs
 
 
@@ -557,7 +587,8 @@ def send_job_alert(notifier: Notifier, job: Job, categories: list[Category]) -> 
         f"Company: {job['company']}\n"
         f"Role: {job['title']}\n"
         f"Location: {job['location'] or 'Not listed'}\n"
-        f"Category: {badges(categories)}\n"
+        + (f"Posted: {job['posted']}\n" if job.get("posted") else "")
+        + f"Category: {badges(categories)}\n"
         f"{job['url']}"
     )
     tags = [c["emoji_tag"] for c in categories if c["emoji_tag"]]
@@ -606,6 +637,25 @@ def dedupe_candidates(candidates: list[tuple[Job, list[Category], str]],
     return to_send
 
 
+def write_matches_page(matches: list[Job], path: str = MATCHES_PATH) -> None:
+    """Write every currently matching role, newest first, as a Markdown page."""
+    seen: set[str] = set()
+    rows: list[Job] = []
+    for job in sorted(matches, key=lambda j: j.get("posted", ""), reverse=True):
+        key = soft_key(job)
+        if key not in seen:
+            seen.add(key)
+            rows.append(job)
+    lines = [f"# Matching internships ({len(rows)})", "",
+             f"Newest first. Updated {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC.", ""]
+    for j in rows:
+        title = j["title"].replace("[", "(").replace("]", ")")
+        lines.append(f"- {j.get('posted') or 'date n/a'} · **{j['company']}** · "
+                     f"[{title}]({j['url'].replace(' ', '%20')}) · {j['location'][:80] or 'n/a'}")
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(lines) + "\n")
+
+
 def main() -> None:
     """Run one scrape-filter-notify cycle."""
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s",
@@ -632,6 +682,7 @@ def main() -> None:
     new_sources: list[str] = []   # sources seen for the first time (after day one)
     candidates: list[tuple[Job, list[Category], str]] = []  # to alert on
     ok_sources = failed_sources = total_jobs = total_matches = 0
+    all_matches: list[Job] = []
 
     for source_key, fetch in collect_sources(cfg):
         jobs = fetch()
@@ -647,6 +698,7 @@ def main() -> None:
             if not cats:
                 continue
             matched_here += 1
+            all_matches.append(job)
             jid = job_id(job)
             if jid in state["seen"]:
                 continue
@@ -677,6 +729,8 @@ def main() -> None:
         log.info("DRY-RUN complete: %d roles currently match your filters.", baselined)
         return
 
+    write_matches_page(all_matches)
+
     if first_run:
         notifier.send(
             "Internship bot initialized",
@@ -701,8 +755,8 @@ def main() -> None:
 
     to_send = dedupe_candidates(candidates, state, today, dedupe_soft)
 
-    # Highest-priority categories first.
-    to_send.sort(key=lambda item: -max(c["priority"] for c in item[1]))
+    # Newest first; roles with no known date go last.
+    to_send.sort(key=lambda item: item[0].get("posted", ""), reverse=True)
     individual, overflow = to_send[:notifier.max_alerts], to_send[notifier.max_alerts:]
 
     sent = 0

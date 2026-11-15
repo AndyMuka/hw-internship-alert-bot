@@ -6,3 +6,6 @@ venv/
 .env
 *.log
 .DS_Store
+matches.txt
+matches.html
+matches.html

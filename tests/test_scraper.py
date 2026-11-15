@@ -168,3 +168,29 @@ def test_markdown_table_parsing():
 def test_topic_with_bom_and_newline_is_cleaned(monkeypatch):
     monkeypatch.setenv("NTFY_TOPIC", "\ufeffmy-topic-123\r\n")
     assert scraper.Notifier({}).ntfy_url == "https://ntfy.sh/my-topic-123"
+
+
+def test_parse_posted_formats():
+    from datetime import date
+    t = date(2026, 11, 15)
+    assert scraper.parse_posted("5d", t) == "2026-11-10"
+    assert scraper.parse_posted("1mo", t) == "2026-10-16"
+    assert scraper.parse_posted("Nov 14", t) == "2026-11-14"
+    assert scraper.parse_posted("Dec 30", t) == "2025-12-30"
+    assert scraper.parse_posted("2026-10-19T11:17:24-04:00", t) == "2026-10-19"
+    assert scraper.parse_posted(1786469891368, t) == "2026-08-11"
+    assert scraper.parse_posted("garbage", t) == ""
+
+
+def test_feed_age_column_and_matches_page_order(tmp_path):
+    md = (
+        "| Company | Role | Location | Application | Age |\n|---|---|---|---|---|\n"
+        "| A | FPGA Intern | Ottawa | [x](https://a.test/1) | 9d |\n"
+        "| B | FPGA Intern | Ottawa | [x](https://b.test/1) | 1d |\n"
+    )
+    jobs = scraper.parse_markdown_tables("feed:x", md)
+    assert jobs[0]["posted"] < jobs[1]["posted"]
+    page = tmp_path / "m.md"
+    scraper.write_matches_page(jobs, str(page))
+    text = page.read_text(encoding="utf-8")
+    assert text.index("**B**") < text.index("**A**")  # newest first
