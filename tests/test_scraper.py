@@ -194,3 +194,19 @@ def test_feed_age_column_and_matches_page_order(tmp_path):
     scraper.write_matches_page(jobs, str(page))
     text = page.read_text(encoding="utf-8")
     assert text.index("**B**") < text.index("**A**")  # newest first
+
+def test_ntfy_headers_include_matches_button(monkeypatch):
+    sent = {}
+
+    class R:
+        status_code = 200
+        def raise_for_status(self): pass
+
+    monkeypatch.setattr(scraper.SESSION, "post",
+                        lambda url, data, headers, timeout: sent.update(h=headers) or R())
+    n = scraper.Notifier({"notifications": {"ntfy_topic_name": "t", "matches_url": "https://list.test/m"}})
+    n.send("t", "m", url="https://job.test/1")
+    assert sent["h"]["Click"] == "https://job.test/1"
+    assert "All matches, https://list.test/m" in sent["h"]["Actions"]
+    n.send("digest", "m")  # no job url: tap opens the list
+    assert sent["h"]["Click"] == "https://list.test/m"

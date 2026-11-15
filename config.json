@@ -3,7 +3,8 @@
     "ntfy_server": "https://ntfy.sh",
     "ntfy_topic_name": "CHANGE_ME_TO_SECRET_TOPIC",
     "discord_webhook_url": "",
-    "max_individual_alerts_per_run": 15
+    "max_individual_alerts_per_run": 15,
+    "matches_url": "https://github.com/AndyMuka/hw-internship-matches/blob/main/MATCHES.md"
   },
 
   "level_keywords": [

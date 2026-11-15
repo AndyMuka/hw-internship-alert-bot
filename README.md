@@ -27,7 +27,7 @@ A serverless bot that watches company career boards and community internship tra
 - **Whole-word matching:** `intern` won't match "internal", `soc` won't match "social"; simple plurals still match.
 - **No flood on day one:** the first run records existing roles silently and sends one summary. Newly added companies/feeds are baselined the same way.
 - **Cross-source dedupe:** the same role listed on a company board and a tracker pings once.
-- **Newest first:** alerts are sent in order of posting date, and every run refreshes [`MATCHES.md`](MATCHES.md), a clickable list of all current matches (newest first) you can open from any device.
+- **Newest first:** alerts are sent in order of posting date, and every run refreshes `MATCHES.md` in a separate **private** repo (via a repo-scoped deploy key stored as the `MATCHES_DEPLOY_KEY` secret), and each alert has an "All matches" button that opens it. Set `notifications.matches_url` in `config.json` to your own list URL.
 - **Private by design:** the repo is public (free, unlimited Actions minutes) but your ntfy topic is an encrypted secret and is scrubbed from logs.
 
 ## Development workflow (Claude Code)

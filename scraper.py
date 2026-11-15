@@ -503,6 +503,8 @@ class Notifier:
         self.discord_url = (os.environ.get("DISCORD_WEBHOOK_URL") or cfg_discord).strip()
         self._secrets = [x for x in (topic, self.discord_url) if x]
         self.max_alerts = max(1, int(n.get("max_individual_alerts_per_run", 15)))
+        # Optional: link to your (private) full match list, shown as a button on alerts.
+        self.matches_url = str(n.get("matches_url", "")).strip()
 
     def _scrub(self, text: object) -> str:
         """Never let the topic or webhook reach the (public) Actions log."""
@@ -534,11 +536,17 @@ class Notifier:
         }
         if tags:
             headers["Tags"] = ",".join(t for t in tags if t)
+        actions: list[str] = []
         if url:
             safe_url = requests.utils.requote_uri(url)
             headers["Click"] = safe_url
             if "," not in safe_url and ";" not in safe_url:
-                headers["Actions"] = f"view, Open posting, {safe_url}"
+                actions.append(f"view, Open posting, {safe_url}")
+        if self.matches_url:
+            headers.setdefault("Click", self.matches_url)  # digests: tap opens the list
+            actions.append(f"view, All matches, {self.matches_url}")
+        if actions:
+            headers["Actions"] = "; ".join(actions)
         body = message.encode("utf-8")[:3900].decode("utf-8", "ignore").encode("utf-8")
         try:
             resp = SESSION.post(self.ntfy_url, data=body,

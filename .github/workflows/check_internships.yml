@@ -58,14 +58,36 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add seen_jobs.json MATCHES.md
+          git add seen_jobs.json
           if git diff --cached --quiet; then
             echo "No changes to seen_jobs.json."
           else
-            git commit -m "Update seen_jobs.json and MATCHES.md [skip ci]"
+            git commit -m "Update seen_jobs.json [skip ci]"
             git pull --rebase origin "${GITHUB_REF_NAME}"
             git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
+
+      - name: Publish match list to the private repo
+        # The list lives in a PRIVATE repo (deploy key limited to that repo only),
+        # so the public repo never exposes it. Skipped if the secret is absent.
+        continue-on-error: true
+        env:
+          DEPLOY_KEY: ${{ secrets.MATCHES_DEPLOY_KEY }}
+          MATCHES_REPO: ${{ github.repository_owner }}/hw-internship-matches
+        run: |
+          if [ -z "${DEPLOY_KEY}" ] || [ ! -f MATCHES.md ]; then echo "Nothing to publish."; exit 0; fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "${DEPLOY_KEY}" > ~/.ssh/matches_key
+          chmod 600 ~/.ssh/matches_key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/matches_key -o IdentitiesOnly=yes"
+          git clone --depth 1 "git@github.com:${MATCHES_REPO}.git" "${RUNNER_TEMP}/matches"
+          cp MATCHES.md "${RUNNER_TEMP}/matches/MATCHES.md"
+          cd "${RUNNER_TEMP}/matches"
+          git add MATCHES.md
+          if git diff --cached --quiet; then echo "List unchanged."; exit 0; fi
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Update matches"
+          git push origin HEAD
 
       - name: Keep the schedule alive
         # GitHub pauses scheduled workflows in public repos after 60 days
