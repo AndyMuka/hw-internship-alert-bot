@@ -9,7 +9,7 @@
 
   "level_keywords": [
     "intern", "internship", "co-op", "coop", "student",
-    "summer 2027", "fall 2027", "winter 2027"
+    "summer 2027", "fall 2027"
   ],
 
   "role_categories": {
@@ -58,7 +58,8 @@
 
   "exclude_keywords": [
     "senior", "staff", "principal", "manager", "director",
-    "phd only", "new grad", "full-time"
+    "phd only", "new grad", "full-time",
+    "2025", "2026", "spring 2027", "winter 2027"
   ],
 
   "allowed_locations": [
