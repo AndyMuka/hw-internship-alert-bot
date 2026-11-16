@@ -44,6 +44,17 @@
         "device driver", "board bring-up", "bsp", "stm32", "arm"
       ]
     },
+    "hpc_and_performance": {
+      "enabled": true,
+      "label": "HPC & Performance",
+      "priority": 3,
+      "emoji_tag": "gear",
+      "keywords": [
+        "hpc", "high performance computing", "high-performance computing",
+        "parallel computing", "parallel programming", "supercomputing",
+        "simd", "openmp", "performance engineer", "performance engineering"
+      ]
+    },
     "ee_sw_hybrid": {
       "enabled": true,
       "label": "EE/SW Hybrid",

@@ -116,6 +116,12 @@ def test_real_config_allows_montreal():
     assert m.match(job("FPGA Intern", location="Montréal, QC"))
 
 
+def test_real_config_hpc_category_not_noisy():
+    m = scraper.Matcher(scraper.load_config())
+    assert "HPC & Performance" in labels(m, job("HPC Software Intern", location="Remote"))
+    assert m.match(job("Performance Marketing Intern", location="Remote")) == []
+
+
 def test_parse_ashby_locations_and_unlisted():
     posts = [
         {"title": "FPGA Intern", "jobUrl": "https://a.test/1", "location": "San Jose",
