@@ -3,13 +3,14 @@
 [![CI](https://github.com/AndyMuka/hw-internship-alert-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/AndyMuka/hw-internship-alert-bot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A serverless bot that watches company career boards and community internship trackers for **FPGA, ASIC, embedded, firmware, GPU and EE/SW-hybrid** roles and pushes new matches to your phone within ~15 minutes of posting. It runs on GitHub Actions and ntfy, so it costs **$0** and needs no server.
+A serverless bot that watches company career boards and community internship trackers for **FPGA, ASIC, embedded, firmware, GPU, HPC and EE/SW-hybrid** roles at large companies and hardware startups, and pushes new matches to your phone. It runs on GitHub Actions and ntfy, so it costs **$0** and needs no server. See [Scheduling](#scheduling) for how often it checks.
 
 ## How it works
 
 ```
  Greenhouse API ─┐
- Lever API ──────┼─►  scraper.py  ──►  Matcher  ──►  Dedupe  ──►  ntfy.sh  ──►  📱 phone
+ Lever API ──────┤
+ Ashby API ──────┼─►  scraper.py  ──►  Matcher  ──►  Dedupe  ──►  ntfy.sh  ──►  📱 phone
  GitHub trackers ┘   (fetch+parse)    level kw        job_id        (push)
  (README tables)                      exclude kw      soft_key
                                       location        across sources
@@ -32,7 +33,7 @@ A serverless bot that watches company career boards and community internship tra
 
 ## Development workflow (Claude Code)
 
-Built and polished with [Claude Code](https://claude.com/claude-code): the codebase was reviewed, type-annotated and moved to structured `logging` by the agent, and the 20+ offline `pytest` cases (tiered matching, word boundaries, excludes, locations, dedupe, feed parsing) were written against mock payloads and run locally before every push. CI re-runs them on each push and PR. [`CLAUDE.md`](CLAUDE.md) records the architecture and rules the agent follows in this repo.
+Built and polished with [Claude Code](https://claude.com/claude-code): the codebase was reviewed, type-annotated and moved to structured `logging` by the agent, and the 30+ offline `pytest` cases (tiered matching, word boundaries, excludes, locations, dedupe, feed and Ashby parsing) were written against mock payloads and run locally before every push. CI re-runs them on each push and PR. [`CLAUDE.md`](CLAUDE.md) records the architecture and rules the agent follows in this repo.
 
 ## Quick start
 
@@ -47,9 +48,13 @@ Built and polished with [Claude Code](https://claude.com/claude-code): the codeb
    ```bash
    gh workflow run check_internships.yml
    ```
-   You should get an "Internship bot initialized" notification. After that it runs every 15 minutes.
+   You should get an "Internship bot initialized" notification. After that it runs on the schedule above.
 
 Local dry run (nothing sent, no state written): `pip install -r requirements.txt && python scraper.py`.
+
+## Scheduling
+
+The workflow is set to run every 15 minutes, but GitHub treats `schedule` as best-effort and can delay or skip runs, sometimes for hours. For tighter timing, call the workflow's `workflow_dispatch` endpoint from a free external cron service (a fine-grained token limited to this repo with *Actions: Read and write*). Runs on a public repository are free either way.
 
 ## Customizing `config.json`
 
@@ -57,7 +62,7 @@ All behaviour lives in `config.json`; edit it on GitHub or locally and push. No 
 
 | Key | What it does |
 |---|---|
-| `companies.greenhouse` / `companies.lever` | `"board-slug": "Display Name"`. The slug is from the careers URL (`boards.greenhouse.io/<slug>`, `jobs.lever.co/<slug>`). |
+| `companies.greenhouse` / `companies.lever` / `companies.ashby` | `"board-slug": "Display Name"`. The slug is from the careers URL (`boards.greenhouse.io/<slug>`, `jobs.lever.co/<slug>`, `jobs.ashbyhq.com/<slug>`). Ashby is common among startups. |
 | `github_feeds` | Raw README URLs of community trackers; set `"enabled": false` to pause one. |
 | `level_keywords` | Title must contain one (intern, co-op, `summer 2027`…). |
 | `role_categories` | Each has `enabled`, `label`, `priority` (1–5, sets notification urgency) and `keywords`. Add your own block to track a new field. |

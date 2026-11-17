@@ -3,7 +3,7 @@
 Hardware & embedded internship alert bot. Single-file Python app run every 15 min by GitHub Actions.
 
 ## Architecture
-- `scraper.py` — fetchers (Greenhouse, Lever, GitHub README tables) -> `Matcher` (level keyword, exclude words, location, role categories) -> dedupe (`job_id` per posting, `soft_key` across sources) -> `Notifier` (ntfy, optional Discord).
+- `scraper.py` — fetchers (Greenhouse, Lever, Ashby, GitHub README tables) -> `Matcher` (level keyword, exclude words, location, role categories) -> dedupe (`job_id` per posting, `soft_key` across sources) -> `Notifier` (ntfy, optional Discord).
 - `config.json` — all user-tunable behaviour (companies, keywords, locations, categories). No code change needed to retarget.
 - `seen_jobs.json` — state, committed back by the workflow. First run baselines silently; later runs alert only on new roles.
 - `.github/workflows/check_internships.yml` — scheduled scrape; `ci.yml` — pytest on push/PR.
