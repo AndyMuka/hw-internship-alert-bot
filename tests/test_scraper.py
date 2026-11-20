@@ -111,9 +111,10 @@ def test_location_rejected(matcher):
     assert matcher.match(job("FPGA Intern", location="Berlin, Germany")) == []
 
 
-def test_real_config_allows_montreal():
+def test_real_config_allows_montreal_and_vancouver():
     m = scraper.Matcher(scraper.load_config())
     assert m.match(job("FPGA Intern", location="Montréal, QC"))
+    assert m.match(job("FPGA Intern", location="Vancouver, BC"))
 
 
 def test_real_config_hpc_category_not_noisy():
